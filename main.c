@@ -122,10 +122,10 @@ int main(int argc, char *argv[]) {
 			point pe = pt[next];
 
 			// Use z-buffering if allowed
-			if (hiding == 2)
-				put_line_z(tmp, new_line( ps, pe ), c, bresenham, zbuf, vertices[3][curr], vertices[3][next]);
-			else
-				put_line(tmp, new_line( ps, pe ), c, bresenham);
+			// if (hiding == 2)
+			// 	put_line_z(tmp, new_line( ps, pe ), c, bresenham, zbuf, vertices[3][curr], vertices[3][next]);
+			// else
+			put_line(tmp, new_line( ps, pe ), c, bresenham);
 			
 		}
 
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
 		color cr = { ((rand() % 255) + 255) >> 1, ((rand() % 255) + 255) >> 1, ((rand() % 255) + 255) >> 1 };
 		// if (hiding == 2)
 		// 	fill_face_z(tmp, pt[0], pt[1], pt[2], cr, zbuf, vertices[3][j], vertices[3][(j+1) % 3]);
-		// else
+		// elseelse
 			fill_face(tmp, pt[0], pt[1], pt[2], cr);
 
 	}

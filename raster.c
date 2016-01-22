@@ -66,7 +66,9 @@ int raster_tostream(raster r, FILE *f) {
 
 int raster_write(raster r, const char *file) {
 	FILE *f = fopen(file, "wt");
-	return raster_tostream(r, f);
+	int ans = raster_tostream(r, f);
+	fclose(f);
+	return ans;
 }
 
 int raster_out(raster r) {

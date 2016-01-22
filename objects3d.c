@@ -176,15 +176,15 @@ int compare_points_y(const void *p1, const void *p2) {
 /* Fill a face using the scanline algorithm */
 int fill_face(raster r, point p1, point p2, point p3, color c) {
 	point p[3];
-	point *bigtbl = NULL, *tmp = NULL, *ffp = NULL;
-	int i, j, s, btbls = 0, ffps = 0, last = 0, lowest, highest;
+	point_table bigtbl = {NULL, 0}, tmp = {NULL, 0}, ffp = {NULL, 0};
+	int i, j, s;
 	
 	// Get the point values into the array
 	p[0] = p1; p[1] = p2; p[2] = p3;
 	
 	// Obtain the highest and lowest "y" values
-	lowest = p[0].y;
-	highest = p[0].y;
+	int lowest = p[0].y;
+	int highest = p[0].y;
 	for (i = 0; i < 3; i++) {
 		if ( p[i].y < lowest ) lowest = p[i].y;
 		if ( p[i].y > highest ) highest = p[i].y;
@@ -193,27 +193,30 @@ int fill_face(raster r, point p1, point p2, point p3, color c) {
 	// First generate the lines (just the tables) and store them in a big table
 	for (i = 0; i < 3; i++) {
 		int start = i, end = (i+1) % 3;
-		unsigned int tmps = 0, y = 0;
 		tmp = line_raster( new_line( p[start], p[end] ), bresenham );
 
-		do {
-			++tmps;
-		} while ( !points_equal( tmp[y++], p[end] ) );
+		bigtbl.data = realloc(bigtbl.data, (bigtbl.num_elems + tmp.num_elems) * sizeof *(bigtbl.data));
 
-		bigtbl = realloc(bigtbl, (btbls + tmps) * sizeof *bigtbl);
-		if ( bigtbl == NULL ) return -1;
-		memcpy(bigtbl+btbls, tmp, tmps * sizeof *tmp);
-		free(tmp);
-		btbls += tmps;
+		if ( bigtbl.data == NULL ) {
+			free(tmp.data);
+			free(bigtbl.data);
+			return -1;
+		}
+
+		memcpy(bigtbl.data + bigtbl.num_elems, tmp.data, tmp.num_elems * sizeof *(tmp.data));
+		free(tmp.data);
+
+		bigtbl.num_elems += tmp.num_elems;
 	}
 	
 	// Sort the table using QuickSort
-	qsort(bigtbl, btbls, sizeof *bigtbl, compare_points_y);
+	qsort(bigtbl.data, bigtbl.num_elems, sizeof *(bigtbl.data), compare_points_y);
 	
 	// Remove duplicates
-	for (i = 1; i < btbls; i++) {
-		if ( !points_equal( bigtbl[i], bigtbl[last] ) )
-			bigtbl[++last] = bigtbl[i];
+	int last = 0;
+	for (i = 1; i < bigtbl.num_elems; i++) {
+		if ( !points_equal( (bigtbl.data)[i], (bigtbl.data)[last] ) )
+			(bigtbl.data)[++last] = (bigtbl.data)[i];
 	}
 	++last;
 	
@@ -222,23 +225,30 @@ int fill_face(raster r, point p1, point p2, point p3, color c) {
 	for (s = highest; s >= lowest; s--) {
 	
 		// Get both minimum and maximum Xs
-		int xmin = bigtbl[j].x, xmax = bigtbl[j].y;
-		while ( bigtbl[j].y == s && j < btbls ) {
-			if ( bigtbl[j].x < xmin ) xmin = bigtbl[j].x;
-			if ( bigtbl[j].x > xmax ) xmax = bigtbl[j].x;
+		int xmin = (bigtbl.data)[j].x, xmax = (bigtbl.data)[j].x;
+		while ( (bigtbl.data)[j].y == s && j < bigtbl.num_elems ) {
+			if ( (bigtbl.data)[j].x < xmin ) xmin = (bigtbl.data)[j].x;
+			if ( (bigtbl.data)[j].x > xmax ) xmax = (bigtbl.data)[j].x;
 			++j;
 		}
 		
 		for (i = xmin + 1; i < xmax; i++) {
-			ffp = realloc( ffp, ++ffps * sizeof(*ffp) );
-			if (ffp == NULL) return -1;
-			ffp[ffps-1] = new_point( i, s );
+			ffp.data = realloc( ffp.data, ++(ffp.num_elems) * sizeof *(ffp.data) );
+			if (ffp.data == NULL) {
+				free(bigtbl.data);
+				free(ffp.data);
+				return -1;
+			}
+			(ffp.data)[ffp.num_elems - 1] = new_point( i, s );
 		}
 	}
 
 	// All the internal points are in "ffp"
 	// Use a color to fill them
-	for (i = 0; i < ffps; i++) put_pixel(r, ffp[i], c);
+	for (i = 0; i < ffp.num_elems; i++) put_pixel(r, (ffp.data)[i], c);
+
+	free(bigtbl.data);
+	free(ffp.data);
 
 	return 0;
 }
