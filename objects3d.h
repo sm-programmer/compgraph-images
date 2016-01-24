@@ -5,6 +5,7 @@
 #include <math.h>
 #include <string.h>
 
+#include "types.h"
 #include "raster.h"
 #include "lines.h"
 
@@ -26,8 +27,38 @@
 #define MATW 4
 #define MATH 4
 
-void readobj(const char *file, double v[4][NVERT], int f[4][NFACE], int *numv, int *numf);
-void apply_matrix(double **matrix, double v[4][NVERT]);
+typedef struct {
+	double x;
+	double y;
+	double z;
+	double w;
+} point3d;
+
+typedef struct {
+	point3d *data;
+	uint num_elems;
+} point3d_table;
+
+typedef struct {
+	int v1;
+	int v2;
+	int v3;
+} face;
+
+typedef struct {
+	face *data;
+	uint num_elems;
+} face_table;
+
+typedef struct {
+	point3d_table vertices;
+	face_table faces;
+} file_data;
+
+point3d new_point3d(double x, double y, double z, double w);
+face new_face(int v1, int v2, int v3);
+file_data readobj(const char *file);
+void apply_matrix(double **matrix, point3d_table v);
 double ** new_matrix();
 void dispose_matrix(double **mat);
 double ** traslate(double tx, double ty, double tz);

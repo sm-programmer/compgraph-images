@@ -2,6 +2,7 @@
 #define VECTORS_H
 
 #include <math.h>
+#include "objects3d.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -19,15 +20,8 @@ typedef struct {
 	double x;
 	double y;
 	double z;
-} point3d;
-
-typedef struct {
-	double x;
-	double y;
-	double z;
 } vector;
 
-point3d new_point3d(double x, double y, double z);
 vector new_vector(const point3d ps, const point3d pe);
 double vector_magnitude(const vector v);
 vector vector_crossproduct(const vector a, const vector b);

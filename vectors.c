@@ -1,10 +1,5 @@
 #include "vectors.h"
 
-point3d new_point3d(double x, double y, double z) {
-	point3d p = {x, y, z};
-	return p;
-}
-
 vector new_vector(const point3d ps, const point3d pe) {
 	vector v;
 	v.x = pe.x - ps.x;

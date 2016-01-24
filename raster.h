@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "types.h"
+
 #define WIDTH 1920
 #define HEIGHT 1080
 #define MAXCOLOR 255
@@ -12,10 +14,6 @@
 #define R 0
 #define G 1
 #define B 2
-
-typedef unsigned int uint;
-typedef unsigned char byte;
-typedef byte*** raster_data;
 
 typedef struct {
 	raster_data data;

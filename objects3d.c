@@ -1,41 +1,97 @@
 #include "objects3d.h"
 
-void readobj(const char *file, double v[4][NVERT], int f[4][NFACE], int *numv, int *numf) {
-	FILE *fi = fopen(file, "r");
-	if (fi == NULL) return;
-	char c;
-	while (!feof(fi)) {
-		c = fgetc(fi);
-		switch (c) {
-			case '#':
-				while ( fgetc(fi) != '\n' );
-				break;
-			case 'v':
-				fscanf(fi, " %lf %lf %lf\n", &(v[0][*numv]), &(v[1][*numv]), &(v[2][*numv]));
-				v[3][(*numv)++] = 1.0;
-				break;
-			case 'f':
-				fscanf(fi, " %d %d %d\n", &(f[0][*numf]), &(f[1][*numf]), &(f[2][*numf]));
-				++(*numf);
-				break;
-			default: continue;
-		}
-	}
-	fclose(fi);
+point3d new_point3d(double x, double y, double z, double w) {
+	point3d p = {x, y, z, w};
+	return p;
 }
 
-//void apply_matrix(double matrix[4][4], double v[4][NVERT]) {
-void apply_matrix(double **matrix, double v[4][NVERT]) {
-	if (matrix == NULL) return;
-	unsigned int x, y, e;
-	double tmp, oldval[4];
-	for (e = 0; e < NVERT; e++) {
-		for (y = 0; y < 4; y++) oldval[y] = v[y][e];
-		for (y = 0; y < 4; y++) {
-			tmp = 0.0;
-			for (x = 0; x < 4; x++) tmp += matrix[y][x] * oldval[x];
-			v[y][e] = tmp;
+face new_face(int v1, int v2, int v3) {
+	face f = {v1, v2, v3};
+	return f;
+}
+
+file_data readobj(const char *file) {
+	file_data empty = {{NULL, 0}, {NULL, 0}};
+	file_data ans = empty;
+	FILE *fi = fopen(file, "r");
+	if (fi != NULL) {
+		char c;
+		int no_err = 1;
+		while (!feof(fi) && no_err) {
+			c = fgetc(fi);
+			switch (c) {
+				case '#':
+					while( fgetc(fi) != '\n' );
+					break;
+				case 'v': {
+					ans.vertices.data = realloc( ans.vertices.data, ++(ans.vertices.num_elems) * sizeof *(ans.vertices.data) );
+					if (ans.vertices.data == NULL) {
+						if (ans.faces.data != NULL) free(ans.faces.data);
+						ans = empty;
+						no_err = 0;
+					}
+					point3d tmp = new_point3d(0.0, 0.0, 0.0, 1.0);
+					fscanf(fi, " %lf %lf %lf\n", &(tmp.x), &(tmp.y), &(tmp.z));
+					(ans.vertices.data)[ans.vertices.num_elems - 1] = tmp;
+				} break;
+				case 'f': {
+					ans.faces.data = realloc( ans.faces.data, ++(ans.faces.num_elems) * sizeof *(ans.faces.data) );
+					if (ans.faces.data == NULL) {
+						if (ans.vertices.data != NULL) free(ans.vertices.data);
+						ans = empty;
+						no_err = 0;
+					}
+					face tmp = new_face(0, 0, 0);
+					fscanf(fi, " %d %d %d\n", &(tmp.v1), &(tmp.v2), &(tmp.v3));
+					(ans.faces.data)[ans.faces.num_elems - 1] = tmp;
+				} break;
+				default: continue;
+			}
 		}
+		fclose(fi);
+	}
+	return ans;
+}
+
+// void readobj(const char *file, double v[4][NVERT], int f[4][NFACE], int *numv, int *numf) {
+// 	FILE *fi = fopen(file, "r");
+// 	if (fi != NULL) {
+// 		char c;
+// 		while (!feof(fi)) {
+// 			c = fgetc(fi);
+// 			switch (c) {
+// 				case '#':
+// 					while ( fgetc(fi) != '\n' );
+// 					break;
+// 				case 'v':
+// 					fscanf(fi, " %lf %lf %lf\n", &(v[0][*numv]), &(v[1][*numv]), &(v[2][*numv]));
+// 					v[3][(*numv)++] = 1.0;
+// 					break;
+// 				case 'f':
+// 					fscanf(fi, " %d %d %d\n", &(f[0][*numf]), &(f[1][*numf]), &(f[2][*numf]));
+// 					++(*numf);
+// 					break;
+// 				default: continue;
+// 			}
+// 		}
+// 		fclose(fi);
+// 	}
+// }
+
+//void apply_matrix(double matrix[4][4], double v[4][NVERT]) {
+// void apply_matrix(double **matrix, double v[4][NVERT]) {
+void apply_matrix(double **matrix, point3d_table v) {
+	if (matrix == NULL || v.data == NULL) return;
+	uint x, y, e;
+	for (e = 0; e < v.num_elems; e++) {
+		double tmp[4] = {0};
+		double oldval[4] = { (v.data)[e].x, (v.data)[e].y, (v.data)[e].z, (v.data)[e].w };
+		for (y = 0; y < 4; y++) {
+			double res = 0.0;
+			for (x = 0; x < 4; x++) res += matrix[y][x] * oldval[x];
+			tmp[y] = res;
+		}
+		(v.data)[e] = new_point3d(tmp[0], tmp[1], tmp[2], tmp[3]);
 	}
 }
 
