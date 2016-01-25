@@ -20,12 +20,22 @@ This example uses a processed OBJ file kindly received from professor Rafael Nor
 
 `./main who.is.that.pokemon.obj 4.0 4.0 4.0 0.0 0.0 400.0 0.0 180.0 0.0 300.0 1 > image.ppm`
 
-Compare the output of the above command to the image "anout.ppm". If both are identical, the program is working perfectly!
+Compare the output of the above command to the image "anout.ppm". If both are identical in shape, the program is working perfectly!
 
-# TODO
-1. Add support for *z-buffering* as another option in face hiding.
-2. Allow to enable/disable face filling.
-3. Add light support (Gouraud, Phong).
-4. *Clean the code up!*
-5. Conform all the sources to GNU GPL v3.
-6. Provide a better input procedure.
+# TO DO
+1. **Z-Buffering**
+  * Add support for it (as another option in face hiding). Requires changes in the raster and line drawing functions, in order to take the additional buffer into account at pixel level.
+2. **Face filling**
+  * Allow enable/disable. Receive the user's choice as another argument.
+  * Break the `fill_face` function into several sub-functions.
+3. **Illumination**
+  * Add light sources support: *ambient*, *diffuse*, and *specular*.
+  * Add illumination procedures: *at pixel level*, *Gouraud*, and *Phong*.
+4. **Code cleaning and optimisations**
+  * *Clean the code!* (Modular, self-contained design).
+  * Provide a better input procedure (aside from command-line arguments).
+  * Use a better OBJ parser (one made with `flex` and `bison` is on the way).
+5. **Testing**
+  * Test on low-memory conditions (heap allocation).
+6. **Open source availability**
+  * Adapt sources and executable to adhere with GNU GPL v3.
