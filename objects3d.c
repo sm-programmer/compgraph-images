@@ -53,167 +53,122 @@ file_data readobj(const char *file) {
 	return ans;
 }
 
-// void readobj(const char *file, double v[4][NVERT], int f[4][NFACE], int *numv, int *numf) {
-// 	FILE *fi = fopen(file, "r");
-// 	if (fi != NULL) {
-// 		char c;
-// 		while (!feof(fi)) {
-// 			c = fgetc(fi);
-// 			switch (c) {
-// 				case '#':
-// 					while ( fgetc(fi) != '\n' );
-// 					break;
-// 				case 'v':
-// 					fscanf(fi, " %lf %lf %lf\n", &(v[0][*numv]), &(v[1][*numv]), &(v[2][*numv]));
-// 					v[3][(*numv)++] = 1.0;
-// 					break;
-// 				case 'f':
-// 					fscanf(fi, " %d %d %d\n", &(f[0][*numf]), &(f[1][*numf]), &(f[2][*numf]));
-// 					++(*numf);
-// 					break;
-// 				default: continue;
-// 			}
-// 		}
-// 		fclose(fi);
-// 	}
-// }
-
-//void apply_matrix(double matrix[4][4], double v[4][NVERT]) {
-// void apply_matrix(double **matrix, double v[4][NVERT]) {
-void apply_matrix(double **matrix, point3d_table v) {
-	if (matrix == NULL || v.data == NULL) return;
-	uint x, y, e;
-	for (e = 0; e < v.num_elems; e++) {
-		double tmp[4] = {0};
-		double oldval[4] = { (v.data)[e].x, (v.data)[e].y, (v.data)[e].z, (v.data)[e].w };
-		for (y = 0; y < 4; y++) {
-			double res = 0.0;
-			for (x = 0; x < 4; x++) res += matrix[y][x] * oldval[x];
-			tmp[y] = res;
-		}
-		(v.data)[e] = new_point3d(tmp[0], tmp[1], tmp[2], tmp[3]);
-	}
-}
-
-double ** new_matrix() {
-	double **res = calloc(MATH, sizeof *res);
-	if (res == NULL) return NULL;
-	unsigned int x;
-	for (x = 0; x < MATH; x++) {
-		res[x] = calloc(MATW, sizeof **res);
-		if (res[x] == NULL) {
-			while (x--) free(res[x]);
-			free(res);
-			return NULL;
-		}
-	}
-	return res;
-}
-
-void dispose_matrix(double **mat) {
-	unsigned int x;
-	for (x = 0; x < MATH; x++) free(mat[x]);
-	free(mat);
-}
-
-double ** traslate(double tx, double ty, double tz) {
-	double **res = new_matrix();
-	if (res == NULL) return NULL;
-	res[0][0] = res[1][1] = res[2][2] = res[3][3] = 1.0;
-	res[0][3] = tx;
-	res[1][3] = ty;
-	res[2][3] = tz;
-	return res;
-}
-
-double ** scale_by(double sx, double sy, double sz) {
-	double **res = new_matrix();
-	if (res == NULL) return NULL;
-	res[0][0] = sx;
-	res[1][1] = sy;
-	res[2][2] = sz;
-	res[3][3] = 1.0;
-	return res;
-}
-
-double ** rotate_x(double ax) {
-	double **res = new_matrix();
-	if (res == NULL) return NULL;
-	res[0][0] = res[3][3] = 1;
-	res[1][1] = res[2][2] = cos(ax * RADIANS);
-	res[2][1] = sin(ax * RADIANS);
-	res[1][2] = -res[2][1];
-	return res;
-}
-
-double ** rotate_y(double ay) {
-	double **res = new_matrix();
-	if (res == NULL) return NULL;
-	res[1][1] = res[3][3] = 1;
-	res[0][0] = res[2][2] = cos(ay * RADIANS);
-	res[2][0] = sin(ay * RADIANS);
-	res[0][2] = -res[2][0];
-	return res;
-}
-
-double ** rotate_z(double az) {
-	double **res = new_matrix();
-	if (res == NULL) return NULL;
-	res[2][2] = res[3][3] = 1;
-	res[0][0] = res[1][1] = cos(az * RADIANS);
-	res[1][0] = sin(az * RADIANS);
-	res[0][1] = -res[1][0];
-	return res;
-}
-
-double ** rotate(double ax, double ay, double az) {
-	double **rx = rotate_x(ax);
-	double **ry = rotate_y(ay);
-	double **rz = rotate_z(az);
-
-	double **zy = product(rz, ry);
-	double **res = product(zy, rx);
-
-	dispose_matrix(zy);
-	dispose_matrix(rz);
-	dispose_matrix(ry);
-	dispose_matrix(rx);
-
-	return res;
-}
-
-double ** product(double **m1, double **m2) {
-	double **res = new_matrix();
-	if (res == NULL) return NULL;
-	unsigned int x, y, e;
-	for (y = 0; y < MATH; y++) {
-		for (x = 0; x < MATW; x++) {
-			double acum = 0.0;
-			for (e = 0; e < MATW; e++) {
-				acum += m1[y][e] * m2[e][x];
+void apply_matrix(const matrix_double m, point3d_table v) {
+	if (!md_is_empty(m) && v.data != NULL) {
+		uint x, y, e;
+		for (e = 0; e < v.num_elems; e++) {
+			double tmp[4] = {0};
+			double oldval[4] = { (v.data)[e].x, (v.data)[e].y, (v.data)[e].z, (v.data)[e].w };
+			for (y = 0; y < m.rows; y++) {
+				double res = 0.0;
+				for (x = 0; x < m.cols; x++) res += (m.data)[y][x] * oldval[x];
+				tmp[y] = res;
 			}
-			res[y][x] = acum;
+			(v.data)[e] = new_point3d(tmp[0], tmp[1], tmp[2], tmp[3]);
 		}
+	}
+}
+
+matrix_double new_matrix() {
+	return md_new(4, 4);
+}
+
+void dispose_matrix(matrix_double *m) {
+	md_dispose(m);
+}
+
+matrix_double traslate(double tx, double ty, double tz) {
+	matrix_double res = new_matrix();
+	if (!md_is_empty(res)) {
+		(res.data)[0][0] = (res.data)[1][1] = (res.data)[2][2] = (res.data)[3][3] = 1.0;
+		(res.data)[0][3] = tx;
+		(res.data)[1][3] = ty;
+		(res.data)[2][3] = tz;
 	}
 	return res;
 }
 
-double ** projection(double f) {
-	double **res = new_matrix();
-	if (res == NULL) return NULL;
-	res[0][0] = res[1][1] = f;
-	res[2][2] = res[3][2] = 1.0;
+matrix_double scale_by(double sx, double sy, double sz) {
+	matrix_double res = new_matrix();
+	if (!md_is_empty(res)) {
+		(res.data)[0][0] = sx;
+		(res.data)[1][1] = sy;
+		(res.data)[2][2] = sz;
+		(res.data)[3][3] = 1.0;
+	}
 	return res;
 }
 
-void show_matrix(double **mat) {
-	unsigned int i,j;
-	for (j = 0; j < 4; j++) {
-		for (i = 0; i < 4; i++) {
-			printf("%f", mat[j][i]);
-			if (i < 3) printf("\t"); else printf("\n");
-		}
+matrix_double rotate_x(double ax) {
+	matrix_double res = new_matrix();
+	if (!md_is_empty(res)) {
+		(res.data)[0][0] = (res.data)[3][3] = 1.0;
+		(res.data)[1][1] = (res.data)[2][2] = cos(ax * RADIANS);
+		(res.data)[2][1] = sin(ax * RADIANS);
+		(res.data)[1][2] = -(res.data)[2][1];
 	}
+	return res;
+}
+
+matrix_double rotate_y(double ay) {
+	matrix_double res = new_matrix();
+	if (!md_is_empty(res)) {
+		(res.data)[1][1] = (res.data)[3][3] = 1.0;
+		(res.data)[0][0] = (res.data)[2][2] = cos(ay * RADIANS);
+		(res.data)[2][0] = sin(ay * RADIANS);
+		(res.data)[0][2] = -(res.data)[2][0];
+	}
+	return res;
+}
+
+matrix_double rotate_z(double az) {
+	matrix_double res = new_matrix();
+	if (!md_is_empty(res)) {
+		(res.data)[2][2] = (res.data)[3][3] = 1.0;
+		(res.data)[0][0] = (res.data)[1][1] = cos(az * RADIANS);
+		(res.data)[1][0] = sin(az * RADIANS);
+		(res.data)[0][1] = -(res.data)[1][0];
+	}
+	return res;
+}
+
+matrix_double rotate(double ax, double ay, double az) {
+	matrix_double rx, ry, rz, zy, res;
+
+	res = md_new(0, 0);
+	
+	rx = rotate_x(ax);
+	ry = rotate_y(ay);
+	rz = rotate_z(az);
+
+	if (!md_is_empty(rx) && !md_is_empty(ry) && !md_is_empty(rz)) {
+		zy = product(rz, ry);
+		res = (!md_is_empty(zy)) ? product(zy, rx) : md_new(0, 0);
+	}
+
+	dispose_matrix(&zy);
+	dispose_matrix(&rz);
+	dispose_matrix(&ry);
+	dispose_matrix(&rx);
+
+	return res;
+}
+
+matrix_double product(const matrix_double m1, const matrix_double m2) {
+	return md_product(m1, m2);
+}
+
+matrix_double projection(double f) {
+	matrix_double res = new_matrix();
+	if (!md_is_empty(res)) {
+		(res.data)[0][0] = (res.data)[1][1] = f;
+		(res.data)[2][2] = (res.data)[3][2] = 1.0;
+	}
+	return res;
+}
+
+void show_matrix(const matrix_double mat) {
+	md_show(mat, stdout);
 }
 
 /* PRIVATE */

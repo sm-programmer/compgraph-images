@@ -31,10 +31,10 @@ int main(int argc, char *argv[]) {
 
 	int hiding = atoi( argv[12] );
 
-	double **scale = scale_by(sx, sy, sz);
-	double **tras = traslate(tx, ty, tz);
-	double **rot = rotate(rx, ry, rz);
-	double **proj = projection(fd);
+	matrix_double scale = scale_by(sx, sy, sz);
+	matrix_double tras = traslate(tx, ty, tz);
+	matrix_double rot = rotate(rx, ry, rz);
+	matrix_double proj = projection(fd);
 	
 	file_data vnf = readobj(argv[1]);
 
@@ -46,19 +46,19 @@ int main(int argc, char *argv[]) {
 
 	// Join all the transformations in a single matrix
 	// Operation order: Scaling, rotation, traslation and projection
-	double **t1 = product(proj, tras);
-	double **t2 = product(t1, rot);
-	double **t3 = product(t2, scale);
+	matrix_double t1 = product(proj, tras);
+	matrix_double t2 = product(t1, rot);
+	matrix_double t3 = product(t2, scale);
 
 	apply_matrix(t3, vnf.vertices);
-	
-	dispose_matrix(t3);
-	dispose_matrix(t2);
-	dispose_matrix(t1);
-	dispose_matrix(scale);
-	dispose_matrix(tras);
-	dispose_matrix(rot);
-	dispose_matrix(proj);
+		
+	dispose_matrix(&t3);
+	dispose_matrix(&t2);
+	dispose_matrix(&t1);
+	dispose_matrix(&scale);
+	dispose_matrix(&tras);
+	dispose_matrix(&rot);
+	dispose_matrix(&proj);
 
 	// Projection sets w = z, so divide everything by w.
 	for (i = 0; i < vnf.vertices.num_elems; i++) {
